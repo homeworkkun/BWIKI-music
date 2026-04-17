@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>曲目列表 - 第五人格</title>
+    <link rel="stylesheet" href="/WIKI/音乐/style.css">
+    <style>
+        * { box-sizing: border-box; }
+        
+        .back-link {
+            position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+            font-size: 0.9rem; color: var(--accent-color);
+            text-decoration: none; padding: 5px 10px; background: rgba(212, 175, 55, 0.15);
+            border: 1px solid var(--accent-color); border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .back-link:hover { background: var(--accent-color); color: #000; }
+        
+        header { position: relative; }
+        header h1 { padding: 0 80px; }
+        
+        .album-header {
+            text-align: center; margin-bottom: 30px; max-width: 600px;
+        }
+        .album-title { margin: 15px 0 8px 0; font-size: 1.5rem; }
+        .album-desc { color: #888; font-size: 0.9rem; }
+        
+        .song-list {
+            width: 100%; max-width: 800px; margin-bottom: 120px;
+        }
+        
+        .song-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 15px; border-bottom: 1px solid #333;
+            background: rgba(255,255,255,0.02); transition: all 0.2s;
+            border-radius: 8px; margin-bottom: 5px; gap: 10px;
+        }
+        .song-row:hover { background: rgba(255,255,255,0.05); }
+        .song-row.playing {
+            background: rgba(212, 175, 55, 0.15);
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .song-info { flex: 1; min-width: 0; cursor: pointer; }
+        .song-title {
+            font-size: 1rem; color: #fff;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            transition: color 0.2s;
+        }
+        .song-info:hover .song-title { color: var(--accent-color); }
+        .song-artist { font-size: 0.8rem; color: #666; margin-top: 3px; }
+        
+        .song-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        
+        .action-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: rgba(212, 175, 55, 0.15); border: 1px solid var(--accent-color);
+            color: var(--accent-color); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; text-decoration: none;
+        }
+        .action-btn:hover { background: var(--accent-color); color: #000; }
+        .song-row.playing .action-btn.play { background: var(--accent-color); color: #000; }
+        
+        .detail-btn {
+            padding: 6px 12px; background: transparent;
+            border: 1px solid #444; color: #888; border-radius: 6px;
+            cursor: pointer; font-size: 0.75rem; transition: all 0.2s;
+            text-decoration: none; white-space: nowrap;
+        }
+        .detail-btn:hover {
+            border-color: var(--accent-color); color: var(--accent-color);
+        }
+        
+        .mini-player {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(15,15,19,0.98);
+            border-top: 1px solid var(--accent-color);
+            padding: 10px 15px;
+            display: flex; align-items: center; gap: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+        }
+        
+        .mini-vinyl {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: radial-gradient(#222 60%, #000 65%);
+            border: 2px solid #111;
+            display: flex; align-items: center; justify-content: center;
+            animation: spin 6s linear infinite; animation-play-state: paused;
+            flex-shrink: 0;
+        }
+        .mini-vinyl-cover {
+            width: 32px; height: 32px; border-radius: 50%;
+            background-size: cover; background-position: center;
+            border: 1px solid #fff;
+        }
+        .mini-vinyl-icon {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: repeating-radial-gradient(circle at center, #111 0px, #1a1a1a 1px, #111 2px),
+                        conic-gradient(from 0deg, #0a0a0a 0deg 20deg, #151515 20deg 40deg, #0a0a0a 40deg 60deg, #151515 60deg 80deg, #0a0a0a 80deg 100deg, #151515 100deg 120deg, #0a0a0a 120deg 140deg, #151515 140deg 160deg, #0a0a0a 160deg 180deg, #151515 180deg 200deg, #0a0a0a 200deg 220deg, #151515 220deg 240deg, #0a0a0a 240deg 260deg, #151515 260deg 280deg, #0a0a0a 280deg 300deg, #151515 300deg 320deg, #0a0a0a 320deg 340deg, #151515 340deg 360deg);
+            border: 1px solid #333; position: relative;
+        }
+        .mini-vinyl-icon::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            width: 8px; height: 8px; border-radius: 50%;
+            background: linear-gradient(135deg, #8b0000, #5c0000);
+            transform: translate(-50%, -50%);
+        }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .mini-info { flex: 1; min-width: 0; }
+        .mini-title {
+            color: #fff; font-size: 0.9rem; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .mini-artist { color: #666; font-size: 0.7rem; }
+        
+        .mini-player {
+            display: flex; align-items: center; gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .mini-player-left {
+            display: flex; align-items: center; gap: 10px;
+            flex: 1; min-width: 0;
+        }
+        
+        .mini-player-right {
+            display: flex; align-items: center; gap: 10px;
+        }
+        
+        .mini-progress {
+            width: 100%;
+            order: 3;
+        }
+        .mini-progress-bar {
+            width: 100%; height: 4px; background: #333;
+            border-radius: 2px; cursor: pointer; overflow: hidden;
+        }
+        .mini-progress-fill {
+            height: 100%; background: var(--accent-color);
+            width: 0%; transition: width 0.1s linear;
+        }
+        .mini-time {
+            display: flex; justify-content: space-between;
+            font-size: 0.65rem; color: #666; margin-top: 3px;
+        }
+        
+        .mini-controls { display: flex; align-items: center; gap: 6px; }
+        
+        .mini-control-btn {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(212, 175, 55, 0.15); border: 1px solid var(--accent-color);
+            color: var(--accent-color); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .mini-control-btn:hover { background: rgba(212, 175, 55, 0.3); }
+        
+        .mini-play-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--accent-color); color: #000;
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .mini-play-btn:hover { background: #f0d78c; }
+        
+        .mini-volume { display: flex; align-items: center; gap: 6px; }
+        .mini-volume-icon {
+            font-size: 1rem; color: var(--accent-color);
+            cursor: pointer; transition: transform 0.2s;
+        }
+        .mini-volume-icon:hover { transform: scale(1.1); }
+        .mini-volume-slider {
+            width: 60px; height: 4px; -webkit-appearance: none;
+            appearance: none; background: #333; border-radius: 2px;
+            cursor: pointer;
+        }
+        .mini-volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 12px; height: 12px;
+            background: var(--accent-color); border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .no-songs { text-align: center; padding: 40px; color: #666; }
+        audio { display: none; }
+        
+        @media (min-width: 768px) {
+            .mini-player {
+                flex-wrap: nowrap;
+                padding: 12px 20px;
+            }
+            .mini-progress {
+                width: auto; flex: 1; order: 0;
+                max-width: 200px;
+            }
+            .mini-progress-bar { width: 100%; }
+            .mini-volume-slider { width: 70px; }
+        }
+        
+        @media (max-width: 600px) {
+            .container { padding: 20px 10px; }
+            .album-title { font-size: 1.2rem; }
+            .song-row { padding: 10px 12px; }
+            .song-title { font-size: 0.9rem; }
+            .action-btn { width: 32px; height: 32px; }
+            .detail-btn { padding: 5px 10px; font-size: 0.7rem; }
+            .mini-player { padding: 8px 10px; gap: 8px; }
+            .mini-vinyl { width: 36px; height: 36px; }
+            .mini-vinyl-icon { width: 26px; height: 26px; }
+            .mini-title { font-size: 0.8rem; }
+            .mini-artist { font-size: 0.65rem; }
+            .mini-play-btn { width: 34px; height: 34px; }
+            .mini-control-btn { width: 26px; height: 26px; }
+            .mini-volume-slider { width: 50px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/WIKI/音乐/index.html" class="back-link">← 返回</a>
+        <h1 id="headerTitle">曲目列表</h1>
+    </header>
+
+    <div class="container fade-in" id="songContainer">
+        <div class="album-header">
+            <p class="album-desc" id="albumDesc"></p>
+        </div>
+
+        <div class="song-list" id="songList"></div>
+    </div>
+
+    <div class="mini-player" id="miniPlayer" style="display: none;">
+        <div class="mini-player-left">
+            <div class="mini-vinyl" id="miniVinyl">
+                <div class="mini-vinyl-icon"></div>
+            </div>
+            <div class="mini-info">
+                <div class="mini-title" id="miniTitle"></div>
+                <div class="mini-artist" id="miniArtist"></div>
+            </div>
+        </div>
+        <div class="mini-player-right">
+            <div class="mini-controls">
+                <button class="mini-control-btn" onclick="skipMiniBackward()" title="后退10秒">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
+                    </svg>
+                </button>
+                <button class="mini-play-btn" id="miniPlayBtn" onclick="toggleMiniPlay()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" id="miniPlayIcon">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
+                <button class="mini-control-btn" onclick="skipMiniForward()" title="前进10秒">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="mini-volume">
+                <span class="mini-volume-icon" id="miniVolumeIcon" onclick="toggleMute()">🔊</span>
+                <input type="range" class="mini-volume-slider" id="miniVolumeSlider" 
+                       min="0" max="100" value="80" oninput="changeMiniVolume(this.value)">
+            </div>
+        </div>
+        <div class="mini-progress">
+            <div class="mini-progress-bar" id="miniProgressBar" onclick="seekMiniTo(event)">
+                <div class="mini-progress-fill" id="miniProgressFill"></div>
+            </div>
+            <div class="mini-time">
+                <span id="miniCurrentTime">0:00</span>
+                <span id="miniDuration">0:00</span>
+            </div>
+        </div>
+    </div>
+
+    <audio id="miniAudio"></audio>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const albumId = params.get('albumId');
+        
+        let currentSongId = null;
+        let currentAlbum = null;
+        const miniAudio = document.getElementById('miniAudio');
+        const miniPlayer = document.getElementById('miniPlayer');
+        const miniVinyl = document.getElementById('miniVinyl');
+        const miniPlayBtn = document.getElementById('miniPlayBtn');
+        const miniProgressFill = document.getElementById('miniProgressFill');
+        const miniCurrentTime = document.getElementById('miniCurrentTime');
+        const miniDuration = document.getElementById('miniDuration');
+        const miniVolumeSlider = document.getElementById('miniVolumeSlider');
+        const miniVolumeIcon = document.getElementById('miniVolumeIcon');
+        
+        let audioContext = null;
+        let sourceNodes = [];
+        let isIntroLoopMode = false;
+        let introAudioBuffer = null;
+        let loopAudioBuffer = null;
+        let gainNode = null;
+        let introLoopStartTime = 0;
+        let introLoopDuration = 0;
+        let previousVolume = 80;
+
+        miniAudio.volume = 0.8;
+
+        function formatTime(seconds) {
+            if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function detectPlayMode(src) {
+            const filename = src.split('/').pop();
+            const baseName = filename.replace('.mp3', '');
+            const introMatch = baseName.match(/^(.+)_intro$/);
+            const loopMatch = baseName.match(/^(.+)_loop$/);
+            if (introMatch) return { type: 'intro_loop', baseName: introMatch[1] };
+            if (loopMatch) return { type: 'intro_loop', baseName: loopMatch[1] };
+            return { type: 'single' };
+        }
+
+        function getFullPath(src) {
+            if (src.startsWith('/')) return src;
+            return `/WIKI/音乐/${src}`;
+        }
+
+        async function loadAudio(url) {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return await audioContext.decodeAudioData(arrayBuffer);
+        }
+
+        async function playIntroLoop(baseName) {
+            isIntroLoopMode = true;
+            const introSrc = getFullPath(`追击音乐/欢乐惊魂/${baseName}_intro.mp3`);
+            const loopSrc = introSrc.replace('_intro.mp3', '_loop.mp3');
+            
+            try {
+                introAudioBuffer = await loadAudio(introSrc);
+                loopAudioBuffer = await loadAudio(loopSrc);
+                introLoopDuration = introAudioBuffer.duration + loopAudioBuffer.duration;
+                miniDuration.textContent = formatTime(introLoopDuration);
+                playIntro();
+            } catch (e) {
+                console.error('Failed to load intro/loop:', e);
+            }
+        }
+
+        function playIntro() {
+            if (introAudioBuffer && audioContext) {
+                if (audioContext.state === 'suspended') audioContext.resume();
+                if (!gainNode) {
+                    gainNode = audioContext.createGain();
+                    gainNode.connect(audioContext.destination);
+                    gainNode.gain.value = miniVolumeSlider.value / 100;
+                }
+                
+                const source = audioContext.createBufferSource();
+                source.buffer = introAudioBuffer;
+                source.connect(gainNode);
+                source.start(0);
+                sourceNodes.push(source);
+                introLoopStartTime = audioContext.currentTime;
+                
+                source.onended = () => {
+                    const index = sourceNodes.indexOf(source);
+                    if (index > -1) sourceNodes.splice(index, 1);
+                    if (isIntroLoopMode) playLoop();
+                };
+                
+                miniVinyl.style.animationPlayState = 'running';
+                document.getElementById('miniPlayIcon').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                updateIntroLoopProgress();
+            }
+        }
+
+        function playLoop() {
+            if (loopAudioBuffer && isIntroLoopMode && audioContext) {
+                const source = audioContext.createBufferSource();
+                source.buffer = loopAudioBuffer;
+                source.loop = true;
+                source.connect(gainNode);
+                source.start(0);
+                sourceNodes.push(source);
+            }
+        }
+
+        function stopAll() {
+            sourceNodes.forEach(s => { try { s.stop(); } catch(e) {} });
+            sourceNodes = [];
+            isIntroLoopMode = false;
+            miniVinyl.style.animationPlayState = 'paused';
+            document.getElementById('miniPlayIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+        }
+
+        function updateIntroLoopProgress() {
+            if (!isIntroLoopMode || !audioContext) return;
+            const elapsed = audioContext.currentTime - introLoopStartTime;
+            const progress = Math.min((elapsed / introLoopDuration) * 100, 100);
+            miniProgressFill.style.width = `${progress}%`;
+            miniCurrentTime.textContent = formatTime(elapsed);
+            if (isIntroLoopMode && sourceNodes.length > 0) {
+                requestAnimationFrame(updateIntroLoopProgress);
+            }
+        }
+
+        async function playSong(songId) {
+            const song = currentAlbum.songs.find(s => s.id === songId);
+            if(!song) return;
+            
+            stopAll();
+            if (!audioContext || audioContext.state === 'closed') {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            currentSongId = songId;
+            document.getElementById('miniTitle').innerText = song.title;
+            document.getElementById('miniArtist').innerText = song.artist;
+            miniPlayer.style.display = 'flex';
+            
+            document.querySelectorAll('.song-row').forEach(r => r.classList.remove('playing'));
+            const playingRow = document.querySelector(`[data-song-id="${songId}"]`);
+            if(playingRow) playingRow.classList.add('playing');
+            
+            const playMode = detectPlayMode(song.src);
+            if (playMode.type === 'intro_loop') {
+                playIntroLoop(playMode.baseName);
+            } else {
+                miniAudio.src = song.src;
+                miniAudio.play();
+            }
+        }
+
+        function toggleMiniPlay() {
+            if (isIntroLoopMode) {
+                if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+                if (!sourceNodes.length) {
+                    playIntro();
+                } else {
+                    stopAll();
+                }
+            } else {
+                if (miniAudio.paused) {
+                    miniAudio.play();
+                } else {
+                    miniAudio.pause();
+                }
+            }
+        }
+
+        function seekMiniTo(event) {
+            if (isIntroLoopMode) {
+                alert('Intro → Loop 模式不支持进度跳转');
+                return;
+            }
+            if (!miniAudio || !miniAudio.duration || !isFinite(miniAudio.duration)) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const progressBar = document.getElementById('miniProgressBar');
+            const rect = progressBar.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const percent = Math.max(0, Math.min(1, clickX / rect.width));
+            const wasPlaying = !miniAudio.paused;
+            
+            miniAudio.currentTime = percent * miniAudio.duration;
+            
+            if (wasPlaying) {
+                miniAudio.play().catch(e => console.log('Play failed:', e));
+            }
+        }
+
+        function skipMiniBackward() {
+            if (isIntroLoopMode) return;
+            if (!miniAudio || !miniAudio.duration) return;
+            const newTime = Math.max(0, miniAudio.currentTime - 10);
+            miniAudio.currentTime = newTime;
+        }
+
+        function skipMiniForward() {
+            if (isIntroLoopMode) return;
+            if (!miniAudio || !miniAudio.duration || !isFinite(miniAudio.duration)) return;
+            const newTime = Math.min(miniAudio.duration, miniAudio.currentTime + 10);
+            miniAudio.currentTime = newTime;
+        }
+
+        function changeMiniVolume(value) {
+            const vol = value / 100;
+            miniAudio.volume = vol;
+            if (gainNode) gainNode.gain.value = vol;
+            if (value == 0) miniVolumeIcon.textContent = '🔇';
+            else if (value < 30) miniVolumeIcon.textContent = '🔈';
+            else if (value < 70) miniVolumeIcon.textContent = '🔉';
+            else miniVolumeIcon.textContent = '🔊';
+        }
+
+        function toggleMute() {
+            if (miniVolumeSlider.value > 0) {
+                previousVolume = miniVolumeSlider.value;
+                miniVolumeSlider.value = 0;
+                changeMiniVolume(0);
+            } else {
+                miniVolumeSlider.value = previousVolume;
+                changeMiniVolume(previousVolume);
+            }
+        }
+
+        miniAudio.ontimeupdate = () => {
+            if (isIntroLoopMode) return;
+            if (miniAudio.duration && isFinite(miniAudio.duration)) {
+                const percent = (miniAudio.currentTime / miniAudio.duration) * 100;
+                miniProgressFill.style.width = percent + '%';
+                miniCurrentTime.textContent = formatTime(miniAudio.currentTime);
+            }
+        };
+
+        miniAudio.onloadedmetadata = () => {
+            if (isIntroLoopMode) return;
+            if (miniAudio.duration && isFinite(miniAudio.duration)) {
+                miniDuration.textContent = formatTime(miniAudio.duration);
+            }
+        };
+
+        miniAudio.onplay = () => {
+            miniVinyl.style.animationPlayState = 'running';
+            document.getElementById('miniPlayIcon').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+        };
+
+        miniAudio.onpause = () => {
+            miniVinyl.style.animationPlayState = 'paused';
+            document.getElementById('miniPlayIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+        };
+
+        miniAudio.onended = () => {
+            miniVinyl.style.animationPlayState = 'paused';
+            document.getElementById('miniPlayIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+            miniProgressFill.style.width = '0%';
+            miniCurrentTime.textContent = '0:00';
+            document.querySelectorAll('.song-row').forEach(r => r.classList.remove('playing'));
+        };
+
+        fetch('/WIKI/音乐/data.json')
+            .then(res => res.json())
+            .then(async data => {
+                const album = data.find(a => a.id === albumId);
+                currentAlbum = album;
+                
+                if (!album) {
+                    document.getElementById('headerTitle').innerText = "未找到该合集";
+                    return;
+                }
+
+                document.getElementById('headerTitle').innerText = album.title;
+                document.getElementById('albumDesc').innerText = album.desc;
+
+                const listDiv = document.getElementById('songList');
+                if(album.songs.length === 0) {
+                    listDiv.innerHTML = "<div class='no-songs'>暂无曲目记录</div>";
+                } else {
+                    album.songs.forEach((song, index) => {
+                        const row = document.createElement('div');
+                        row.className = 'song-row';
+                        row.dataset.songId = song.id;
+                        row.innerHTML = `
+                            <div class="song-info" onclick="playSong('${song.id}')">
+                                <div class="song-title">${song.title}</div>
+                                <div class="song-artist">${song.artist}</div>
+                            </div>
+                            <div class="song-actions">
+                                <a class="action-btn" href="${song.src}" download title="下载">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                                    </svg>
+                                </a>
+                                <a href="/WIKI/音乐/player.html?albumId=${albumId}&songId=${song.id}" class="detail-btn">详情</a>
+                            </div>
+                        `;
+                        listDiv.appendChild(row);
+                    });
+                }
+            });
+    </script>
+</body>
+</html>

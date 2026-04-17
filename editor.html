@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>WIKI 音乐数据库编辑器</title>
+    <link rel="stylesheet" href="/WIKI/音乐/style.css">
+    <style>
+        * { box-sizing: border-box; }
+        
+        body { background: #1a1a1a; }
+        
+        .editor-container {
+            max-width: 1400px; margin: 0 auto; padding: 20px;
+        }
+        
+        .editor-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #333;
+        }
+        .editor-header h1 { margin: 0; font-size: 1.5rem; }
+        
+        .main-layout {
+            display: grid; grid-template-columns: 280px 1fr; gap: 20px;
+            align-items: start;
+        }
+        
+        @media (max-width: 900px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+        
+        .sidebar {
+            background: #222; border-radius: 8px; padding: 15px;
+            border: 1px solid #333; height: fit-content; position: sticky; top: 20px;
+        }
+        
+        .sidebar-title {
+            font-size: 0.9rem; color: #888; margin-bottom: 10px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        
+        .album-list { max-height: 60vh; overflow-y: auto; }
+        
+        .album-item {
+            padding: 12px; margin-bottom: 5px; background: #2a2a2a;
+            border-radius: 6px; cursor: pointer;
+            border: 2px solid transparent;
+            transition: background 0.2s, border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .album-item:hover { background: #333; border-color: #444; }
+        .album-item.active { border-color: var(--accent-color); background: #2a3a4a; }
+        .album-item-title { font-weight: bold; margin-bottom: 4px; }
+        .album-item-id { font-size: 0.75rem; color: #666; }
+        
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 10px 16px; border-radius: 6px; cursor: pointer;
+            font-size: 0.9rem; font-weight: 500; transition: all 0.2s;
+            border: none;
+        }
+        .btn-primary { background: #3a7bd5; color: #fff; }
+        .btn-primary:hover { background: #4a8be5; }
+        .btn-secondary { background: #333; color: #fff; border: 1px solid #444; }
+        .btn-secondary:hover { background: #444; }
+        .btn-success { background: #2d8a4e; color: #fff; }
+        .btn-success:hover { background: #3d9a5e; }
+        .btn-danger { background: #8a2d2d; color: #fff; }
+        .btn-danger:hover { background: #9a3d3d; }
+        .btn-block { width: 100%; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        
+        .edit-panel {
+            background: #222; border-radius: 8px; padding: 25px;
+            border: 1px solid #333;
+            min-width: 800px;
+        }
+        
+        .panel-empty {
+            text-align: center; padding: 60px 20px; color: #555;
+            min-height: 400px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .panel-empty-icon { font-size: 3rem; margin-bottom: 15px; }
+        
+        .form-section {
+            margin-bottom: 25px; padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        .form-section:last-child { border-bottom: none; margin-bottom: 0; }
+        
+        .form-section-title {
+            font-size: 1.1rem; margin-bottom: 15px; color: #fff;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .form-section-title::before {
+            content: ''; width: 4px; height: 18px; background: var(--accent-color);
+            border-radius: 2px;
+        }
+        
+        .form-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin-bottom: 15px;
+        }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group:last-child { margin-bottom: 0; }
+        
+        .form-label {
+            display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 6px;
+        }
+        
+        .form-input {
+            width: 100%; padding: 10px 12px; background: #1a1a1a; border: 1px solid #444;
+            border-radius: 6px; color: #fff; font-size: 0.95rem; transition: border-color 0.2s;
+        }
+        .form-input:focus { outline: none; border-color: var(--accent-color); }
+        .form-input::placeholder { color: #555; }
+        
+        .input-with-btn {
+            display: flex; gap: 8px;
+        }
+        .input-with-btn .form-input { flex: 1; }
+        
+        .file-btn {
+            padding: 10px 14px; background: #2a5a8a; color: #fff;
+            border: none; border-radius: 6px; cursor: pointer;
+            white-space: nowrap; font-size: 0.85rem; transition: background 0.2s;
+        }
+        .file-btn:hover { background: #3a6a9a; }
+        .file-btn input { display: none; }
+        
+        .tag-input-container {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            padding: 8px; background: #1a1a1a; border: 1px solid #444;
+            border-radius: 6px; min-height: 44px;
+        }
+        .tag-input-container:focus-within { border-color: var(--accent-color); }
+        
+        .tag-item {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 10px; background: rgba(212, 175, 55, 0.2);
+            border: 1px solid var(--accent-color); border-radius: 20px;
+            font-size: 0.85rem; color: var(--accent-color);
+        }
+        .tag-item .remove {
+            cursor: pointer; font-size: 1rem; line-height: 1;
+        }
+        .tag-item .remove:hover { color: #fff; }
+        
+        .tag-input {
+            flex: 1; min-width: 80px; background: transparent; border: none;
+            color: #fff; font-size: 0.9rem; padding: 4px;
+        }
+        .tag-input:focus { outline: none; }
+        
+        .batch-import {
+            background: #1a2a3a; border: 1px dashed #3a5a7a;
+            border-radius: 8px; padding: 15px; margin-bottom: 15px;
+        }
+        .batch-import-title { font-weight: bold; margin-bottom: 5px; }
+        .batch-import-desc { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
+        
+        .songs-list { margin-top: 10px; }
+        
+        .song-item {
+            background: #2a2a2a; border-radius: 8px; padding: 15px;
+            margin-bottom: 10px; border: 1px solid #333;
+        }
+        
+        .song-item-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px;
+        }
+        .song-item-number {
+            background: var(--accent-color); color: #000;
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: bold;
+        }
+        
+        .song-item-fields {
+            display: grid; grid-template-columns: 1fr 2fr 1fr;
+            gap: 10px; margin-bottom: 10px;
+        }
+        @media (max-width: 600px) {
+            .song-item-fields { grid-template-columns: 1fr; }
+        }
+        
+        .song-path-row {
+            display: flex; gap: 8px;
+        }
+        .song-path-row .form-input { flex: 1; }
+        
+        .export-section {
+            background: #222; border-radius: 8px; padding: 20px;
+            margin-top: 20px; border: 1px solid #333;
+        }
+        
+        .export-section h3 {
+            margin: 0 0 10px 0; font-size: 1rem;
+        }
+        
+        .export-tips {
+            font-size: 0.8rem; color: #888; margin-bottom: 15px;
+            background: #1a1a1a; padding: 10px; border-radius: 6px;
+        }
+        .export-tips p { margin: 5px 0; }
+        .export-tips code {
+            background: #333; padding: 2px 6px; border-radius: 3px;
+        }
+        
+        .json-output {
+            width: 100%; min-height: 150px; padding: 12px;
+            background: #1a1a1a; border: 1px solid #444; border-radius: 6px;
+            color: #0f0; font-family: 'Consolas', monospace; font-size: 0.85rem;
+            resize: vertical;
+        }
+        
+        .action-bar {
+            display: flex; gap: 10px; margin-top: 20px;
+            padding-top: 20px; border-top: 1px solid #333;
+        }
+        
+        .toast {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #333; color: #fff; padding: 12px 20px;
+            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transform: translateY(100px); opacity: 0; transition: all 0.3s;
+            z-index: 1000;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #2d8a4e; }
+        .toast.error { background: #8a2d2d; }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="editor-header">
+            <h1>🎵 音乐数据库编辑器</h1>
+            <a href="/WIKI/音乐/index.html" class="btn btn-secondary">返回预览</a>
+        </div>
+
+        <div class="main-layout">
+            <div class="sidebar">
+                <div class="sidebar-title">合集列表</div>
+                <button class="btn btn-primary btn-block" onclick="createNewAlbum()" style="margin-bottom: 15px;">
+                    + 新建合集
+                </button>
+                <div class="album-list" id="albumList"></div>
+            </div>
+
+            <div class="edit-panel" id="editPanel">
+                <div class="panel-empty">
+                    <div class="panel-empty-icon">📂</div>
+                    <p>选择一个合集进行编辑<br>或点击「新建合集」开始</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="export-section">
+            <h3>📤 导出数据</h3>
+            <div class="export-tips">
+                <p>编辑完成后，点击「生成 JSON」按钮，将内容复制到 <code>data.json</code> 文件中。</p>
+                <p>路径格式: <code>/WIKI/音乐/{分类}/{专辑标题}/{歌曲标题}.mp3</code></p>
+            </div>
+            <button class="btn btn-success" onclick="exportJson()">生成 JSON 并复制</button>
+            <textarea class="json-output" id="jsonOutput" placeholder="JSON 输出将显示在这里..."></textarea>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let allData = [];
+        let currentEditIndex = -1;
+
+        fetch('/WIKI/音乐/data.json')
+            .then(res => res.json())
+            .then(data => {
+                allData = data;
+                renderAlbumList();
+            })
+            .catch(() => {
+                allData = [];
+                renderAlbumList();
+            });
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function renderAlbumList() {
+            const container = document.getElementById('albumList');
+            container.innerHTML = '';
+            allData.forEach((album, index) => {
+                const div = document.createElement('div');
+                div.className = `album-item ${index === currentEditIndex ? 'active' : ''}`;
+                div.innerHTML = `
+                    <div class="album-item-title">${album.title || '未命名'}</div>
+                    <div class="album-item-id">${album.id}</div>
+                `;
+                div.onclick = () => loadAlbumToEdit(index);
+                container.appendChild(div);
+            });
+        }
+
+        function loadAlbumToEdit(index) {
+            currentEditIndex = index;
+            const album = allData[index];
+            
+            // 只更新active状态，不重新渲染整个列表
+            document.querySelectorAll('.album-item').forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            renderEditPanel(album);
+        }
+
+        function renderEditPanel(album) {
+            const panel = document.getElementById('editPanel');
+            panel.innerHTML = `
+                <div class="form-section">
+                    <div class="form-section-title">基本信息</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">合集 ID</label>
+                            <input type="text" class="form-input" id="editId" value="${album.id}" onchange="autoSave()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">合集标题</label>
+                            <input type="text" class="form-input" id="editTitle" value="${album.title}" onchange="autoSave()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">合集描述</label>
+                        <input type="text" class="form-input" id="editDesc" value="${album.desc || ''}" placeholder="可选描述" onchange="autoSave()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">分类</label>
+                        <select class="form-input" id="editCategory" onchange="handleCategoryChange(); autoSave()">
+                            <option value="追击音乐" ${(album.category || '追击音乐') === '追击音乐' ? 'selected' : ''}>追击音乐</option>
+                            <option value="归宿" ${album.category === '归宿' ? 'selected' : ''}>归宿</option>
+                            <option value="战斗地图" ${album.category === '战斗地图' ? 'selected' : ''}>战斗地图</option>
+                            <option value="公共地图" ${album.category === '公共地图' ? 'selected' : ''}>公共地图</option>
+                            <option value="活动" ${album.category === '活动' ? 'selected' : ''}>活动</option>
+                            <option value="游戏界面" ${album.category === '游戏界面' ? 'selected' : ''}>游戏界面</option>
+                            <option value="custom" ${album.category && !['追击音乐', '归宿', '战斗地图', '公共地图', '活动', '游戏界面'].includes(album.category) ? 'selected' : ''}>自定义...</option>
+                        </select>
+                        <input type="text" class="form-input" id="editCategoryCustom" 
+                            value="${album.category && !['追击音乐', '归宿', '战斗地图', '公共地图', '活动', '游戏界面'].includes(album.category) ? album.category : ''}" 
+                            placeholder="输入自定义分类" 
+                            onchange="autoSave()"
+                            style="margin-top: 8px; display: ${album.category && !['追击音乐', '归宿', '战斗地图', '公共地图', '活动', '游戏界面'].includes(album.category) ? 'block' : 'none'};">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">上架时间</label>
+                        <input type="text" class="form-input" id="editReleaseDate" value="${album.releaseDate || ''}" placeholder="YYYYMMDD 或 YYYY/MM/DD" onblur="formatDateInput(this); autoSave()" onchange="formatDateInput(this)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">标签（按回车添加）</label>
+                        <div class="tag-input-container" id="tagContainer" onclick="document.getElementById('tagInput').focus()">
+                            ${renderTags(album.tags || [])}
+                            <input type="text" class="tag-input" id="tagInput" placeholder="输入标签..." onkeydown="handleTagInput(event)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">曲目列表</div>
+                    
+                    <div class="batch-import">
+                        <div class="batch-import-title">📥 批量导入</div>
+                        <div class="batch-import-desc">选择多个音乐文件，自动创建歌曲条目（会替换当前列表）</div>
+                        <label class="file-btn">
+                            选择音乐文件
+                            <input type="file" accept="audio/*" multiple onchange="handleBatchMusicSelect(this)">
+                        </label>
+                    </div>
+                    
+                    <div class="songs-list" id="songsList"></div>
+                    
+                    <button class="btn btn-secondary btn-sm" onclick="addSongRow()" style="margin-top: 10px;">
+                        + 手动添加歌曲
+                    </button>
+                </div>
+
+                <div class="action-bar">
+                    <button class="btn btn-danger" onclick="deleteCurrentAlbum()">删除合集</button>
+                </div>
+            `;
+            
+            renderSongs(album.songs);
+        }
+
+        function renderTags(tags) {
+            if (!tags || tags.length === 0) return '';
+            return tags.map((tag, index) => `
+                <span class="tag-item">
+                    ${tag}
+                    <span class="remove" onclick="removeTag(${index}); event.stopPropagation();">×</span>
+                </span>
+            `).join('');
+        }
+
+        function handleTagInput(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const input = event.target;
+                const tag = input.value.trim();
+                if (tag) {
+                    const container = document.getElementById('tagContainer');
+                    const currentTags = getCurrentTags();
+                    if (!currentTags.includes(tag)) {
+                        currentTags.push(tag);
+                        updateTagDisplay(currentTags);
+                        autoSave();
+                    }
+                    input.value = '';
+                }
+            } else if (event.key === 'Backspace' && !event.target.value) {
+                const currentTags = getCurrentTags();
+                if (currentTags.length > 0) {
+                    currentTags.pop();
+                    updateTagDisplay(currentTags);
+                    autoSave();
+                }
+            }
+        }
+
+        function getCurrentTags() {
+            const container = document.getElementById('tagContainer');
+            if (!container) return [];
+            const tagElements = container.querySelectorAll('.tag-item');
+            return Array.from(tagElements).map(el => el.textContent.replace('×', '').trim());
+        }
+
+        function updateTagDisplay(tags) {
+            const container = document.getElementById('tagContainer');
+            const input = document.getElementById('tagInput');
+            container.innerHTML = renderTags(tags);
+            container.appendChild(input);
+            input.focus();
+        }
+
+        function removeTag(index) {
+            const currentTags = getCurrentTags();
+            currentTags.splice(index, 1);
+            updateTagDisplay(currentTags);
+            autoSave();
+        }
+
+        function renderSongs(songs) {
+            const container = document.getElementById('songsList');
+            if (!container) return;
+            container.innerHTML = '';
+            songs.forEach((song, index) => {
+                addSongRow(song, index);
+            });
+        }
+
+        function addSongRow(songData = null, index = null) {
+            const container = document.getElementById('songsList');
+            if (!container) return;
+            
+            const songIndex = index !== null ? index : container.children.length;
+            const id = songData?.id || `s${Date.now()}`;
+            const title = songData?.title || '';
+            const artist = songData?.artist || '网易第五人格';
+            const src = songData?.src || '';
+            
+            const row = document.createElement('div');
+            row.className = 'song-item';
+            row.innerHTML = `
+                <div class="song-item-header">
+                    <span class="song-item-number">${songIndex + 1}</span>
+                    <button class="btn btn-danger btn-sm" onclick="this.closest('.song-item').remove(); updateSongNumbers(); autoSave();">删除</button>
+                </div>
+                <div class="song-item-fields">
+                    <div class="form-group" style="margin:0">
+                        <label class="form-label">歌曲 ID</label>
+                        <input type="text" class="form-input song-id" value="${id}" onchange="autoSave()">
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label class="form-label">标题</label>
+                        <input type="text" class="form-input song-title" value="${title}" placeholder="歌曲标题" onchange="autoSave()">
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label class="form-label">艺术家</label>
+                        <input type="text" class="form-input song-artist" value="${artist}" onchange="autoSave()">
+                    </div>
+                </div>
+                <div class="form-group" style="margin:0">
+                    <label class="form-label">文件路径</label>
+                    <div class="song-path-row">
+                        <input type="text" class="form-input song-src" value="${src}" placeholder="/WIKI/音乐/..." onchange="autoSave()">
+                        <label class="file-btn">
+                            选择
+                            <input type="file" accept="audio/*" onchange="handleSongFileSelect(this)">
+                        </label>
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        function updateSongNumbers() {
+            const items = document.querySelectorAll('.song-item');
+            items.forEach((item, index) => {
+                const num = item.querySelector('.song-item-number');
+                if (num) num.textContent = index + 1;
+            });
+        }
+
+        function handleSongFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const category = getCategoryValue();
+                const albumTitle = document.getElementById('editTitle').value || '新合集';
+                const serverPath = `/WIKI/音乐/${category}/${albumTitle}/${file.name}`;
+                
+                const row = input.closest('.song-item');
+                const srcInput = row.querySelector('.song-src');
+                const titleInput = row.querySelector('.song-title');
+                
+                srcInput.value = serverPath;
+                if (!titleInput.value) {
+                    let titleFromName = file.name.replace(/\.(mp3|ogg|wav|flac)$/i, '');
+                    titleFromName = titleFromName.replace(/_/g, ' ');
+                    titleInput.value = titleFromName;
+                }
+                autoSave();
+            }
+        }
+
+        function handleBatchMusicSelect(input) {
+            if (input.files && input.files.length > 0) {
+                const category = getCategoryValue();
+                const albumTitle = document.getElementById('editTitle').value || '新合集';
+                
+                const container = document.getElementById('songsList');
+                container.innerHTML = '';
+                
+                Array.from(input.files).forEach((file, index) => {
+                    const serverPath = `/WIKI/音乐/${category}/${albumTitle}/${file.name}`;
+                    let titleFromName = file.name.replace(/\.(mp3|ogg|wav|flac)$/i, '');
+                    titleFromName = titleFromName.replace(/_/g, ' ');
+                    
+                    addSongRow({
+                        id: `s${Date.now() + index}`,
+                        title: titleFromName,
+                        artist: '网易第五人格',
+                        src: serverPath
+                    }, index);
+                });
+                
+                autoSave();
+                showToast(`已导入 ${input.files.length} 个音乐文件`);
+            }
+        }
+
+        function handleCategoryChange() {
+            const select = document.getElementById('editCategory');
+            const customInput = document.getElementById('editCategoryCustom');
+            if (select && customInput) {
+                if (select.value === 'custom') {
+                    customInput.style.display = 'block';
+                    customInput.focus();
+                } else {
+                    customInput.style.display = 'none';
+                }
+            }
+        }
+
+        function formatDateInput(input) {
+            let value = input.value.trim();
+            if (!value) return;
+            
+            // 如果输入是8位数字 (YYYYMMDD)
+            if (/^\d{8}$/.test(value)) {
+                const year = value.substring(0, 4);
+                const month = value.substring(4, 6);
+                const day = value.substring(6, 8);
+                input.value = `${year}/${month}/${day}`;
+                return;
+            }
+            
+            // 如果输入是6位数字 (YYMMDD)
+            if (/^\d{6}$/.test(value)) {
+                const year = value.substring(0, 2);
+                const month = value.substring(2, 4);
+                const day = value.substring(4, 6);
+                const fullYear = parseInt(year) >= 50 ? `19${year}` : `20${year}`;
+                input.value = `${fullYear}/${month}/${day}`;
+                return;
+            }
+            
+            // 如果输入包含分隔符，统一转换为 / 分隔
+            value = value.replace(/[-.]/g, '/');
+            
+            // 尝试解析并格式化
+            const parts = value.split('/');
+            if (parts.length === 3) {
+                let [year, month, day] = parts;
+                // 补全年份
+                if (year.length === 2) {
+                    year = parseInt(year) >= 50 ? `19${year}` : `20${year}`;
+                }
+                // 补零
+                month = month.padStart(2, '0');
+                day = day.padStart(2, '0');
+                input.value = `${year}/${month}/${day}`;
+            }
+        }
+
+        function getCategoryValue() {
+            const select = document.getElementById('editCategory');
+            const customInput = document.getElementById('editCategoryCustom');
+            if (select && select.value === 'custom' && customInput) {
+                return customInput.value.trim() || '自定义';
+            }
+            return select ? select.value : '追击音乐';
+        }
+
+        function autoSave() {
+            if (currentEditIndex === -1) return;
+            
+            const songItems = document.querySelectorAll('.song-item');
+            const newSongs = [];
+            songItems.forEach(item => {
+                newSongs.push({
+                    id: item.querySelector('.song-id').value,
+                    title: item.querySelector('.song-title').value,
+                    artist: item.querySelector('.song-artist').value,
+                    src: item.querySelector('.song-src').value
+                });
+            });
+
+            const newTitle = document.getElementById('editTitle').value;
+            const newId = document.getElementById('editId').value;
+            const tags = getCurrentTags();
+            
+            allData[currentEditIndex] = {
+                id: newId,
+                category: getCategoryValue(),
+                title: newTitle,
+                desc: document.getElementById('editDesc').value,
+                releaseDate: document.getElementById('editReleaseDate').value,
+                tags: tags,
+                songs: newSongs
+            };
+
+            // 只更新当前列表项的显示，不重新渲染整个列表
+            const activeItem = document.querySelector('.album-item.active');
+            if (activeItem) {
+                activeItem.querySelector('.album-item-title').textContent = newTitle || '未命名';
+                activeItem.querySelector('.album-item-id').textContent = newId;
+            }
+        }
+
+        function createNewAlbum() {
+            const today = new Date();
+            const formattedDate = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
+            const newAlbum = {
+                id: "new_album_" + Date.now(),
+                category: "追击音乐",
+                title: "",
+                desc: "",
+                releaseDate: formattedDate,
+                tags: [],
+                songs: []
+            };
+            allData.unshift(newAlbum);
+            renderAlbumList();
+            loadAlbumToEdit(0);
+            showToast('已创建新合集，请填写信息');
+        }
+
+        function saveCurrentAlbum() {
+            if (currentEditIndex === -1) return;
+            
+            const songItems = document.querySelectorAll('.song-item');
+            const newSongs = [];
+            songItems.forEach(item => {
+                newSongs.push({
+                    id: item.querySelector('.song-id').value,
+                    title: item.querySelector('.song-title').value,
+                    artist: item.querySelector('.song-artist').value,
+                    src: item.querySelector('.song-src').value
+                });
+            });
+
+            allData[currentEditIndex] = {
+                id: document.getElementById('editId').value,
+                category: document.getElementById('editCategory').value,
+                title: document.getElementById('editTitle').value,
+                desc: document.getElementById('editDesc').value,
+                releaseDate: document.getElementById('editReleaseDate').value,
+                songs: newSongs
+            };
+
+            renderAlbumList();
+        }
+
+        function deleteCurrentAlbum() {
+            if (confirm('确定删除此合集吗？')) {
+                allData.splice(currentEditIndex, 1);
+                currentEditIndex = -1;
+                document.getElementById('editPanel').innerHTML = `
+                    <div class="panel-empty">
+                        <div class="panel-empty-icon">📂</div>
+                        <p>选择一个合集进行编辑<br>或点击「新建合集」开始</p>
+                    </div>
+                `;
+                renderAlbumList();
+                showToast('合集已删除');
+            }
+        }
+
+        function exportJson() {
+            const str = JSON.stringify(allData, null, 4);
+            const area = document.getElementById('jsonOutput');
+            area.value = str;
+            area.select();
+            document.execCommand('copy');
+            showToast('JSON 已复制到剪贴板');
+        }
+    </script>
+</body>
+</html>
