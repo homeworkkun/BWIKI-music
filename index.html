@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WIKI 音乐馆 - 第五人格</title>
-    <link rel="stylesheet" href="/WIKI/音乐/style.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
         .tag-tabs {
             display: flex; flex-wrap: wrap; gap: 10px;
@@ -240,7 +240,7 @@
             filteredData.forEach(album => {
                 const div = document.createElement('div');
                 div.className = 'album-card';
-                div.onclick = () => window.location.href = `/WIKI/音乐/list.html?albumId=${album.id}`;
+                div.onclick = () => window.location.href = `/list.html?albumId=${album.id}`;
                 
                 const tagsHtml = (album.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('');
                 
@@ -259,7 +259,7 @@
             });
         }
         
-        fetch('/WIKI/音乐/data.json')
+        fetch('/data.json')
             .then(res => res.json())
             .then(data => {
                 allData = data.sort((a, b) => {

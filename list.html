@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>曲目列表 - 第五人格</title>
-    <link rel="stylesheet" href="/WIKI/音乐/style.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
         * { box-sizing: border-box; }
         
@@ -223,7 +223,7 @@
 </head>
 <body>
     <header>
-        <a href="/WIKI/音乐/index.html" class="back-link">← 返回</a>
+        <a href="/index.html" class="back-link">← 返回</a>
         <h1 id="headerTitle">曲目列表</h1>
     </header>
 
@@ -329,7 +329,7 @@
 
         function getFullPath(src) {
             if (src.startsWith('/')) return src;
-            return `/WIKI/音乐/${src}`;
+            return `/${src}`;
         }
 
         async function loadAudio(url) {
@@ -552,7 +552,7 @@
             document.querySelectorAll('.song-row').forEach(r => r.classList.remove('playing'));
         };
 
-        fetch('/WIKI/音乐/data.json')
+        fetch('/data.json')
             .then(res => res.json())
             .then(async data => {
                 const album = data.find(a => a.id === albumId);
@@ -585,7 +585,7 @@
                                         <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                                     </svg>
                                 </a>
-                                <a href="/WIKI/音乐/player.html?albumId=${albumId}&songId=${song.id}" class="detail-btn">详情</a>
+                                <a href="/player.html?albumId=${albumId}&songId=${song.id}" class="detail-btn">详情</a>
                             </div>
                         `;
                         listDiv.appendChild(row);

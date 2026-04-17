@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>正在播放</title>
-    <link rel="stylesheet" href="/WIKI/音乐/style.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
         * { box-sizing: border-box; }
         
@@ -259,9 +259,9 @@
         const albumId = params.get('albumId');
         const songId = params.get('songId');
 
-        document.getElementById('backBtn').href = `/WIKI/音乐/list.html?albumId=${albumId}`;
+        document.getElementById('backBtn').href = `/list.html?albumId=${albumId}`;
         document.getElementById('backBtn2').onclick = () => {
-            window.location.href = `/WIKI/音乐/list.html?albumId=${albumId}`;
+            window.location.href = `/list.html?albumId=${albumId}`;
         };
 
         const audio = document.getElementById('audio');
@@ -309,7 +309,7 @@
 
         function getFullPath(src) {
             if (src.startsWith('/')) return src;
-            return `/WIKI/音乐/${src}`;
+            return `/${src}`;
         }
 
         async function loadAudio(url) {
@@ -492,7 +492,7 @@
             currentTimeEl.textContent = '0:00';
         };
 
-        fetch('/WIKI/音乐/data.json')
+        fetch('/data.json')
             .then(res => res.json())
             .then(async data => {
                 const album = data.find(a => a.id === albumId);

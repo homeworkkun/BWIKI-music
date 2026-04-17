@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>WIKI 音乐数据库编辑器</title>
-    <link rel="stylesheet" href="/WIKI/音乐/style.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
         * { box-sizing: border-box; }
         
@@ -237,7 +237,7 @@
     <div class="editor-container">
         <div class="editor-header">
             <h1>🎵 音乐数据库编辑器</h1>
-            <a href="/WIKI/音乐/index.html" class="btn btn-secondary">返回预览</a>
+            <a href="/index.html" class="btn btn-secondary">返回预览</a>
         </div>
 
         <div class="main-layout">
@@ -261,7 +261,7 @@
             <h3>📤 导出数据</h3>
             <div class="export-tips">
                 <p>编辑完成后，点击「生成 JSON」按钮，将内容复制到 <code>data.json</code> 文件中。</p>
-                <p>路径格式: <code>/WIKI/音乐/{分类}/{专辑标题}/{歌曲标题}.mp3</code></p>
+                <p>路径格式: <code>/{分类}/{专辑标题}/{歌曲标题}.mp3</code></p>
             </div>
             <button class="btn btn-success" onclick="exportJson()">生成 JSON 并复制</button>
             <textarea class="json-output" id="jsonOutput" placeholder="JSON 输出将显示在这里..."></textarea>
@@ -274,7 +274,7 @@
         let allData = [];
         let currentEditIndex = -1;
 
-        fetch('/WIKI/音乐/data.json')
+        fetch('/data.json')
             .then(res => res.json())
             .then(data => {
                 allData = data;
@@ -499,7 +499,7 @@
                 <div class="form-group" style="margin:0">
                     <label class="form-label">文件路径</label>
                     <div class="song-path-row">
-                        <input type="text" class="form-input song-src" value="${src}" placeholder="/WIKI/音乐/..." onchange="autoSave()">
+                        <input type="text" class="form-input song-src" value="${src}" placeholder="/..." onchange="autoSave()">
                         <label class="file-btn">
                             选择
                             <input type="file" accept="audio/*" onchange="handleSongFileSelect(this)">
@@ -523,7 +523,7 @@
                 const file = input.files[0];
                 const category = getCategoryValue();
                 const albumTitle = document.getElementById('editTitle').value || '新合集';
-                const serverPath = `/WIKI/音乐/${category}/${albumTitle}/${file.name}`;
+                const serverPath = `/${category}/${albumTitle}/${file.name}`;
                 
                 const row = input.closest('.song-item');
                 const srcInput = row.querySelector('.song-src');
@@ -548,7 +548,7 @@
                 container.innerHTML = '';
                 
                 Array.from(input.files).forEach((file, index) => {
-                    const serverPath = `/WIKI/音乐/${category}/${albumTitle}/${file.name}`;
+                    const serverPath = `/${category}/${albumTitle}/${file.name}`;
                     let titleFromName = file.name.replace(/\.(mp3|ogg|wav|flac)$/i, '');
                     titleFromName = titleFromName.replace(/_/g, ' ');
                     
