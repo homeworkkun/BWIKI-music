@@ -125,7 +125,9 @@ function updatePlayState(playing) {
 
 function playIntro() {
     if (App.introAudioBuffer && App.audioContext) {
-        if (App.audioContext.state === 'suspended') App.audioContext.resume();
+        if (App.audioContext.state === 'suspended') {
+            App.audioContext.resume().catch(() => {});
+        }
         if (!App.gainNode) {
             App.gainNode = App.audioContext.createGain();
             App.gainNode.connect(App.audioContext.destination);
@@ -232,13 +234,15 @@ async function playSong(songId, albumId) {
         playIntroLoop(playMode.baseName);
     } else {
         App.audio.src = song.src;
-        App.audio.play();
+        App.audio.play().catch(() => {});
     }
 }
 
 function togglePlay() {
     if (App.isIntroLoopMode) {
-        if (App.audioContext && App.audioContext.state === 'suspended') App.audioContext.resume();
+        if (App.audioContext && App.audioContext.state === 'suspended') {
+            App.audioContext.resume().catch(() => {});
+        }
         if (!App.sourceNodes.length) {
             playIntro();
         } else {
@@ -246,7 +250,7 @@ function togglePlay() {
         }
     } else {
         if (App.audio.paused) {
-            App.audio.play();
+            App.audio.play().catch(() => {});
         } else {
             App.audio.pause();
         }
