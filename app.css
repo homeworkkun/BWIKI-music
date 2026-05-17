@@ -459,7 +459,31 @@ audio { display: none; }
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    background: transparent;
+    background: transparent !important;
+}
+
+body.simpleplay-mode {
+    background: transparent !important;
+}
+
+body.simpleplay-mode header,
+body.simpleplay-mode .mini-player {
+    display: none !important;
+}
+
+body.simpleplay-mode .container {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    background: transparent !important;
+}
+
+body.simpleplay-mode .container > *:not(#view-simpleplay) {
+    display: none !important;
+}
+
+html.simpleplay-mode {
+    background: transparent !important;
 }
 
 .simple-player {

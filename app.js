@@ -367,6 +367,8 @@ function navigateTo(view, params = {}) {
     const header = document.querySelector('header');
     
     if (view === 'home') {
+        document.body.classList.remove('simpleplay-mode');
+        document.documentElement.classList.remove('simpleplay-mode');
         header.style.display = 'block';
         backLink.style.display = 'none';
         headerTitle.textContent = 'BWIKI 音乐资料库';
@@ -376,6 +378,8 @@ function navigateTo(view, params = {}) {
         const key = `home_${App.currentTag}`;
         setTimeout(() => window.scrollTo(0, App.scrollPositions[key] || 0), 0);
     } else if (view === 'list') {
+        document.body.classList.remove('simpleplay-mode');
+        document.documentElement.classList.remove('simpleplay-mode');
         header.style.display = 'block';
         backLink.style.display = 'block';
         backLink.onclick = () => navigateTo('home');
@@ -385,6 +389,8 @@ function navigateTo(view, params = {}) {
         renderList(params.albumId);
         setTimeout(() => window.scrollTo(0, App.scrollPositions['list'] || 0), 0);
     } else if (view === 'player') {
+        document.body.classList.remove('simpleplay-mode');
+        document.documentElement.classList.remove('simpleplay-mode');
         header.style.display = 'block';
         backLink.style.display = 'block';
         backLink.onclick = () => navigateTo('list', { albumId: App.currentAlbumId });
@@ -395,6 +401,8 @@ function navigateTo(view, params = {}) {
         App.currentSongId = params.songId;
         renderPlayer(params.albumId, params.songId);
     } else if (view === 'simpleplay') {
+        document.body.classList.add('simpleplay-mode');
+        document.documentElement.classList.add('simpleplay-mode');
         header.style.display = 'none';
         miniPlayer.style.display = 'none';
         App.currentAlbumId = params.albumId;
